@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .login-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        .login-box h1 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 32px;
+        }
+
+        .login-box p {
+            color: #666;
+            margin-bottom: 35px;
+            font-size: 16px;
+        }
+
+        .security-badge {
+            background: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-bottom: 25px;
+            display: inline-block;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .error-message {
+            color: #dc3545;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .dashboard-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .dashboard-header h1 {
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #1e3c72;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .dashboard-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #2a5298;
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .stat-value {
+            color: #1e3c72;
+            font-size: 42px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 25px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .table-header h2 {
+            color: #1e3c72;
+            font-size: 24px;
+        }
+
+        .submissions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .submissions-table thead {
+            background: #1e3c72;
+            color: white;
+        }
+
+        .submissions-table th {
+            padding: 18px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .submissions-table td {
+            padding: 18px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge.audio-yes {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge.audio-no {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn-view {
+            background: #2a5298;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 99999;
+            overflow-y: auto;
+            padding: 40px 20px;
+        }
+
+        .modal.show {
+            display: flex !important;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+
+        .close-modal {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .audio-section {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+
+        .audio-player {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2a5298;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyCwulSy8UIY_DDF4A3fhiPNm4gJmbfg8Iw",
+          authDomain: "customer-service-assessm-1c9e5.firebaseapp.com",
+          databaseURL: "https://customer-service-assessm-1c9e5-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "customer-service-assessm-1c9e5",
+          storageBucket: "customer-service-assessm-1c9e5.firebasestorage.app",
+          messagingSenderId: "187392191155",
+          appId: "1:187392191155:web:4f88f966057e1b7815dec6"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+    </script>
+</head>
+<body>
+    <div id="loginPage" class="page active">
+        <div class="login-container">
+            <div class="login-box">
+                <div class="security-badge">🔐 ADMIN ACCESS ONLY</div>
+                <h1>HR Admin Panel</h1>
+                <p>Enter password to access dashboard</p>
+                <form id="loginForm">
+                    <input type="password" id="adminPassword" placeholder="Admin Password" required>
+                    <button type="submit">Access Dashboard</button>
+                </form>
+                <div class="error-message" id="loginError">❌ Incorrect password</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboardPage" class="page">
+        <div class="dashboard-header">
+            <h1>📊 HR Assessment Dashboard</h1>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="loadData()">🔄 Refresh</button>
+                <button class="btn btn-success" onclick="downloadAll()">📥 Download All</button>
+                <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Submissions</h3>
+                    <div class="stat-value" id="totalSubs">0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #28a745;">
+                    <h3>Passed</h3>
+                    <div class="stat-value" id="totalPassed" style="color: #28a745;">0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #dc3545;">
+                    <h3>Failed</h3>
+                    <div class="stat-value" id="totalFailed" style="color: #dc3545;">0</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #ffc107;">
+                    <h3>Average Score</h3>
+                    <div class="stat-value" id="avgScore" style="color: #ffc107;">0%</div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>All Submissions</h2>
+                </div>
+                <div id="tableContent">
+                    <div class="loading"><div class="spinner"></div><p>Loading...</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📋 Submission Details</h2>
+                <button class="close-modal" onclick="closeModal()">✕ Close</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = "HR2024Admin";
+        let allSubs = [];
+        let currentSub = null;
+
+        // LOGIN
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (document.getElementById('adminPassword').value === ADMIN_PASSWORD) {
+                document.getElementById('loginPage').classList.remove('active');
+                document.getElementById('dashboardPage').classList.add('active');
+                loadData();
+            } else {
+                document.getElementById('loginError').classList.add('show');
+            }
+        });
+
+        function logout() {
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('loginPage').classList.add('active');
+            document.getElementById('dashboardPage').classList.remove('active');
+        }
+
+        // LOAD DATA
+        function loadData() {
+            console.log('🔄 Loading data from Firebase...');
+            document.getElementById('tableContent').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+
+            database.ref('submissions').once('value')
+                .then(snapshot => {
+                    allSubs = [];
+                    snapshot.forEach(child => {
+                        allSubs.push(child.val());
+                    });
+                    
+                    console.log('✅ Loaded', allSubs.length, 'submissions');
+                    allSubs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+                    
+                    updateStats();
+                    renderTable();
+                })
+                .catch(err => {
+                    console.error('❌ Error:', err);
+                    alert('Error loading data: ' + err.message);
+                });
+        }
+
+        // UPDATE STATS
+        function updateStats() {
+            const total = allSubs.length;
+            const passed = allSubs.filter(s => s.passed).length;
+            const avg = total > 0 ? Math.round(allSubs.reduce((sum, s) => sum + s.percentage, 0) / total) : 0;
+
+            document.getElementById('totalSubs').textContent = total;
+            document.getElementById('totalPassed').textContent = passed;
+            document.getElementById('totalFailed').textContent = total - passed;
+            document.getElementById('avgScore').textContent = avg + '%';
+        }
+
+        // RENDER TABLE
+        function renderTable() {
+            if (allSubs.length === 0) {
+                document.getElementById('tableContent').innerHTML = '<p style="text-align:center;padding:40px;">No submissions yet</p>';
+                return;
+            }
+
+            let html = '<table class="submissions-table"><thead><tr><th>Name</th><th>Email</th><th>Score</th><th>Status</th><th>Audio</th><th>Date</th><th>Action</th></tr></thead><tbody>';
+
+            allSubs.forEach((sub, idx) => {
+                html += `<tr>
+                    <td><strong>${sub.candidateData.name}</strong></td>
+                    <td>${sub.candidateData.email}</td>
+                    <td><strong>${sub.percentage}%</strong></td>
+                    <td><span class="badge ${sub.passed ? 'pass' : 'fail'}">${sub.passed ? 'PASSED' : 'FAILED'}</span></td>
+                    <td><span class="badge ${sub.audioBase64 ? 'audio-yes' : 'audio-no'}">${sub.audioBase64 ? '🎙️ Yes' : '❌ No'}</span></td>
+                    <td>${new Date(sub.submittedAt).toLocaleString()}</td>
+                    <td><button class="btn-view" onclick="viewSub(${idx})">👁️ View</button></td>
+                </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('tableContent').innerHTML = html;
+        }
+
+        // VIEW SUBMISSION
+        function viewSub(idx) {
+            currentSub = allSubs[idx];
+            console.log('📋 Opening:', currentSub.candidateData.name);
+
+            let html = `
+                <div style="margin-bottom:30px;">
+                    <h3 style="color:#1e3c72;margin-bottom:20px;">👤 Candidate Info</h3>
+                    <p><strong>Name:</strong> ${currentSub.candidateData.name}</p>
+                    <p><strong>Email:</strong> ${currentSub.candidateData.email}</p>
+                    <p><strong>Phone:</strong> ${currentSub.candidateData.phone}</p>
+                </div>
+            `;
+
+            if (currentSub.audioBase64) {
+                html += `
+                    <div class="audio-section">
+                        <h3 style="color:#0d47a1;">🎤 Audio Introduction</h3>
+                        <div class="audio-player">
+                            <audio controls style="width:100%;margin-bottom:15px;">
+                                <source src="${currentSub.audioBase64}" type="audio/webm">
+                                <source src="${currentSub.audioBase64}" type="audio/wav">
+                                <source src="${currentSub.audioBase64}" type="audio/mpeg">
+                                Your browser does not support audio.
+                            </audio>
+                            <button class="btn btn-success" onclick="downloadAudio()">📥 Download Audio</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += '<div style="background:#fff3cd;padding:20px;border-radius:10px;margin:20px 0;"><strong>⚠️ No Audio Recording</strong></div>';
+            }
+
+            html += `
+                <div style="margin:30px 0;">
+                    <h3 style="color:#1e3c72;margin-bottom:20px;">📊 Test Results</h3>
+                    <p><strong>Score:</strong> ${currentSub.percentage}% (${currentSub.correctCount}/${currentSub.totalMCQ})</p>
+                    <p><strong>Status:</strong> <span class="badge ${currentSub.passed ? 'pass' : 'fail'}">${currentSub.passed ? 'PASSED' : 'FAILED'}</span></p>
+                    <p><strong>Time Taken:</strong> ${currentSub.timeTaken}</p>
+                    <p><strong>Submitted:</strong> ${new Date(currentSub.submittedAt).toLocaleString()}</p>
+                </div>
+
+                <div style="margin:30px 0;">
+                    <h3 style="color:#1e3c72;margin-bottom:20px;">🔒 Security Report</h3>
+                    <p><strong>Tab Switches:</strong> ${currentSub.tabSwitchCount || 0}</p>
+                    <p><strong>Violations:</strong> ${currentSub.securityViolationCount || 0}</p>
+                </div>
+
+                <div style="text-align:center;margin-top:30px;padding-top:30px;border-top:2px solid #f0f0f0;">
+                    <button class="btn btn-success" onclick="downloadReport()">📥 Download Report</button>
+                </div>
+            `;
+
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('detailModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // DOWNLOAD AUDIO
+        function downloadAudio() {
+            if (!currentSub || !currentSub.audioBase64) return;
+            try {
+                const link = document.createElement('a');
+                link.href = currentSub.audioBase64;
+                link.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Audio.webm';
+                link.click();
+                console.log('✅ Audio downloaded');
+            } catch (err) {
+                console.error('❌ Error:', err);
+                alert('Error downloading audio');
+            }
+        }
+
+        // DOWNLOAD REPORT
+        function downloadReport() {
+            if (!currentSub) return;
+            let report = '═══ ASSESSMENT REPORT ═══\n\n';
+            report += 'Name: ' + currentSub.candidateData.name + '\n';
+            report += 'Email: ' + currentSub.candidateData.email + '\n';
+            report += 'Phone: ' + currentSub.candidateData.phone + '\n\n';
+            report += 'Score: ' + currentSub.percentage + '%\n';
+            report += 'Status: ' + (currentSub.passed ? 'PASSED' : 'FAILED') + '\n';
+            report += 'Time: ' + currentSub.timeTaken + '\n';
+            report += 'Audio: ' + (currentSub.audioBase64 ? 'Yes' : 'No') + '\n\n';
+            report += 'Security:\n';
+            report += 'Tab Switches: ' + (currentSub.tabSwitchCount || 0) + '\n';
+            report += 'Violations: ' + (currentSub.securityViolationCount || 0) + '\n';
+            
+            const blob = new Blob([report], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Report.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // DOWNLOAD ALL
+        function downloadAll() {
+            if (allSubs.length === 0) {
+                alert('No submissions to download');
+                return;
+            }
+
+            let report = '═══ ALL SUBMISSIONS ═══\n\n';
+            report += 'Generated: ' + new Date().toLocaleString() + '\n';
+            report += 'Total: ' + allSubs.length + '\n\n';
+
+            allSubs.forEach((sub, idx) => {
+                report += '──────────────\n';
+                report += (idx + 1) + '. ' + sub.candidateData.name + '\n';
+                report += 'Email: ' + sub.candidateData.email + '\n';
+                report += 'Score: ' + sub.percentage + '%\n';
+                report += 'Status: ' + (sub.passed ? 'PASSED' : 'FAILED') + '\n\n';
+            });
+
+            const blob = new Blob([report], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'All_Submissions_' + Date.now() + '.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        console.log('✅ Admin panel ready');
+    </script>
+</body>
+</html>
