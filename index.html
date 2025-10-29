@@ -283,6 +283,7 @@
             border-radius: 15px;
             max-width: 1000px;
             width: 100%;
+            margin: auto;
         }
 
         .modal-header {
@@ -316,6 +317,14 @@
             margin-top: 15px;
         }
 
+        .audio-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
         .loading {
             text-align: center;
             padding: 40px;
@@ -335,6 +344,24 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .info-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .info-section h3 {
+            color: #1e3c72;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .info-section p {
+            margin: 10px 0;
+            color: #333;
+        }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -353,6 +380,7 @@
         
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
+        console.log('🔥 Firebase initialized');
     </script>
 </head>
 <body>
@@ -447,24 +475,41 @@
 
         // LOAD DATA
         function loadData() {
-            console.log('🔄 Loading data from Firebase...');
-            document.getElementById('tableContent').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+            console.log('🔄 Loading submissions from Firebase...');
+            document.getElementById('tableContent').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading submissions...</p></div>';
 
             database.ref('submissions').once('value')
                 .then(snapshot => {
                     allSubs = [];
+                    
+                    if (!snapshot.exists()) {
+                        console.log('ℹ️ No submissions found');
+                        document.getElementById('tableContent').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">No submissions yet. Submissions will appear here once candidates complete the assessment.</p>';
+                        updateStats();
+                        return;
+                    }
+
                     snapshot.forEach(child => {
-                        allSubs.push(child.val());
+                        const data = child.val();
+                        allSubs.push(data);
+                        
+                        // Debug: Check audio data
+                        if (data.audioBase64) {
+                            console.log('✅ Audio found for:', data.candidateData.name, '| Size:', Math.round(data.audioBase64.length / 1024), 'KB');
+                        } else {
+                            console.log('⚠️ No audio for:', data.candidateData.name);
+                        }
                     });
                     
-                    console.log('✅ Loaded', allSubs.length, 'submissions');
+                    console.log('✅ Loaded', allSubs.length, 'submission(s)');
                     allSubs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
                     
                     updateStats();
                     renderTable();
                 })
                 .catch(err => {
-                    console.error('❌ Error:', err);
+                    console.error('❌ Firebase Error:', err);
+                    document.getElementById('tableContent').innerHTML = `<p style="text-align:center;padding:40px;color:#dc3545;"><strong>Error loading data:</strong> ${err.message}</p>`;
                     alert('Error loading data: ' + err.message);
                 });
         }
@@ -473,7 +518,7 @@
         function updateStats() {
             const total = allSubs.length;
             const passed = allSubs.filter(s => s.passed).length;
-            const avg = total > 0 ? Math.round(allSubs.reduce((sum, s) => sum + s.percentage, 0) / total) : 0;
+            const avg = total > 0 ? Math.round(allSubs.reduce((sum, s) => sum + (s.percentage || 0), 0) / total) : 0;
 
             document.getElementById('totalSubs').textContent = total;
             document.getElementById('totalPassed').textContent = passed;
@@ -484,19 +529,20 @@
         // RENDER TABLE
         function renderTable() {
             if (allSubs.length === 0) {
-                document.getElementById('tableContent').innerHTML = '<p style="text-align:center;padding:40px;">No submissions yet</p>';
+                document.getElementById('tableContent').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">No submissions yet</p>';
                 return;
             }
 
             let html = '<table class="submissions-table"><thead><tr><th>Name</th><th>Email</th><th>Score</th><th>Status</th><th>Audio</th><th>Date</th><th>Action</th></tr></thead><tbody>';
 
             allSubs.forEach((sub, idx) => {
+                const hasAudio = sub.audioBase64 && sub.audioBase64.length > 100;
                 html += `<tr>
                     <td><strong>${sub.candidateData.name}</strong></td>
                     <td>${sub.candidateData.email}</td>
                     <td><strong>${sub.percentage}%</strong></td>
                     <td><span class="badge ${sub.passed ? 'pass' : 'fail'}">${sub.passed ? 'PASSED' : 'FAILED'}</span></td>
-                    <td><span class="badge ${sub.audioBase64 ? 'audio-yes' : 'audio-no'}">${sub.audioBase64 ? '🎙️ Yes' : '❌ No'}</span></td>
+                    <td><span class="badge ${hasAudio ? 'audio-yes' : 'audio-no'}">${hasAudio ? '🎙️ Yes' : '❌ No'}</span></td>
                     <td>${new Date(sub.submittedAt).toLocaleString()}</td>
                     <td><button class="btn-view" onclick="viewSub(${idx})">👁️ View</button></td>
                 </tr>`;
@@ -506,64 +552,92 @@
             document.getElementById('tableContent').innerHTML = html;
         }
 
-        // VIEW SUBMISSION
+        // VIEW SUBMISSION DETAILS
         function viewSub(idx) {
             currentSub = allSubs[idx];
-            console.log('📋 Opening:', currentSub.candidateData.name);
+            console.log('📋 Opening submission:', currentSub.candidateData.name);
+            console.log('🎤 Audio Base64 length:', currentSub.audioBase64 ? currentSub.audioBase64.length : 0);
 
             let html = `
-                <div style="margin-bottom:30px;">
-                    <h3 style="color:#1e3c72;margin-bottom:20px;">👤 Candidate Info</h3>
+                <div class="info-section">
+                    <h3>👤 Candidate Information</h3>
                     <p><strong>Name:</strong> ${currentSub.candidateData.name}</p>
                     <p><strong>Email:</strong> ${currentSub.candidateData.email}</p>
                     <p><strong>Phone:</strong> ${currentSub.candidateData.phone}</p>
+                    <p><strong>Submission ID:</strong> ${currentSub.submissionId}</p>
                 </div>
             `;
 
-            if (currentSub.audioBase64) {
+            // 🎤 AUDIO SECTION - FIXED!
+            if (currentSub.audioBase64 && currentSub.audioBase64.length > 100) {
                 html += `
                     <div class="audio-section">
-                        <h3 style="color:#0d47a1;">🎤 Audio Introduction</h3>
+                        <h3 style="color:#0d47a1;margin-bottom:15px;">🎤 Audio Introduction</h3>
                         <div class="audio-player">
-                            <audio controls style="width:100%;margin-bottom:15px;">
+                            <audio id="modalAudio" controls controlsList="nodownload" style="width:100%;margin-bottom:15px;">
                                 <source src="${currentSub.audioBase64}" type="audio/webm">
-                                <source src="${currentSub.audioBase64}" type="audio/wav">
-                                <source src="${currentSub.audioBase64}" type="audio/mpeg">
-                                Your browser does not support audio.
+                                Your browser does not support the audio element.
                             </audio>
-                            <button class="btn btn-success" onclick="downloadAudio()">📥 Download Audio</button>
+                            <p style="font-size:13px;color:#666;margin-bottom:15px;">
+                                Audio size: ${Math.round(currentSub.audioBase64.length / 1024)} KB | 
+                                Format: WebM
+                            </p>
+                            <button class="btn btn-success" onclick="downloadAudio()" style="margin-right:10px;">📥 Download Audio</button>
+                            <button class="btn btn-primary" onclick="testAudioPlayback()">▶️ Test Playback</button>
                         </div>
                     </div>
                 `;
             } else {
-                html += '<div style="background:#fff3cd;padding:20px;border-radius:10px;margin:20px 0;"><strong>⚠️ No Audio Recording</strong></div>';
+                html += `
+                    <div style="background:#fff3cd;padding:20px;border-radius:10px;margin:20px 0;border-left:4px solid #ffc107;">
+                        <strong>⚠️ No Audio Recording Available</strong>
+                        <p style="margin-top:10px;color:#856404;">This candidate did not record an audio introduction.</p>
+                    </div>
+                `;
             }
 
             html += `
-                <div style="margin:30px 0;">
-                    <h3 style="color:#1e3c72;margin-bottom:20px;">📊 Test Results</h3>
-                    <p><strong>Score:</strong> ${currentSub.percentage}% (${currentSub.correctCount}/${currentSub.totalMCQ})</p>
-                    <p><strong>Status:</strong> <span class="badge ${currentSub.passed ? 'pass' : 'fail'}">${currentSub.passed ? 'PASSED' : 'FAILED'}</span></p>
-                    <p><strong>Time Taken:</strong> ${currentSub.timeTaken}</p>
-                    <p><strong>Submitted:</strong> ${new Date(currentSub.submittedAt).toLocaleString()}</p>
+                <div class="info-section">
+                    <h3>📊 Test Results</h3>
+                    <p><strong>Score:</strong> ${currentSub.percentage}% (${currentSub.correctCount}/${currentSub.totalMCQ} correct)</p>
+                    <p><strong>Status:</strong> <span class="badge ${currentSub.passed ? 'pass' : 'fail'}">${currentSub.passed ? 'PASSED ✓' : 'FAILED ✗'}</span></p>
+                    <p><strong>Time Taken:</strong> ${currentSub.timeTaken} minutes</p>
+                    <p><strong>Submitted At:</strong> ${new Date(currentSub.submittedAt).toLocaleString()}</p>
                 </div>
 
-                <div style="margin:30px 0;">
-                    <h3 style="color:#1e3c72;margin-bottom:20px;">🔒 Security Report</h3>
-                    <p><strong>Tab Switches:</strong> ${currentSub.tabSwitchCount || 0}</p>
-                    <p><strong>Violations:</strong> ${currentSub.securityViolationCount || 0}</p>
+                <div class="info-section">
+                    <h3>🔒 Security & Integrity</h3>
+                    <p><strong>Tab Switches:</strong> ${currentSub.tabSwitchCount || 0} ${currentSub.tabSwitchCount > 3 ? '⚠️' : '✓'}</p>
+                    <p><strong>Security Violations:</strong> ${currentSub.securityViolationCount || 0} ${currentSub.securityViolationCount > 5 ? '⚠️' : '✓'}</p>
+                    <p><strong>Session Token:</strong> <code style="font-size:11px;background:#f0f0f0;padding:4px 8px;border-radius:4px;">${currentSub.sessionToken || 'N/A'}</code></p>
                 </div>
 
                 <div style="text-align:center;margin-top:30px;padding-top:30px;border-top:2px solid #f0f0f0;">
-                    <button class="btn btn-success" onclick="downloadReport()">📥 Download Report</button>
+                    <button class="btn btn-success" onclick="downloadReport()" style="margin-right:10px;">📥 Download Full Report</button>
+                    <button class="btn btn-primary" onclick="viewAnswers()">📝 View Answers</button>
                 </div>
             `;
 
             document.getElementById('modalBody').innerHTML = html;
             document.getElementById('detailModal').classList.add('show');
+
+            // Auto-load audio after modal opens
+            setTimeout(() => {
+                const audioEl = document.getElementById('modalAudio');
+                if (audioEl) {
+                    audioEl.load();
+                    console.log('✅ Audio element loaded');
+                }
+            }, 100);
         }
 
         function closeModal() {
+            // Stop any playing audio
+            const audioEl = document.getElementById('modalAudio');
+            if (audioEl) {
+                audioEl.pause();
+                audioEl.currentTime = 0;
+            }
             document.getElementById('detailModal').classList.remove('show');
         }
 
@@ -571,74 +645,153 @@
             if (e.target === this) closeModal();
         });
 
-        // DOWNLOAD AUDIO
+        // TEST AUDIO PLAYBACK
+        function testAudioPlayback() {
+            const audioEl = document.getElementById('modalAudio');
+            if (!audioEl) {
+                alert('Audio element not found');
+                return;
+            }
+
+            console.log('🎵 Testing audio playback...');
+            console.log('Audio src length:', audioEl.src ? audioEl.src.length : 0);
+            
+            audioEl.play()
+                .then(() => {
+                    console.log('✅ Audio playing successfully');
+                })
+                .catch(err => {
+                    console.error('❌ Playback error:', err);
+                    alert('Audio playback error: ' + err.message);
+                });
+        }
+
+        // DOWNLOAD AUDIO - FIXED!
         function downloadAudio() {
-            if (!currentSub || !currentSub.audioBase64) return;
+            if (!currentSub || !currentSub.audioBase64) {
+                alert('No audio available to download');
+                return;
+            }
+
             try {
+                console.log('📥 Downloading audio...');
+                
+                // Create download link
                 const link = document.createElement('a');
                 link.href = currentSub.audioBase64;
-                link.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Audio.webm';
+                link.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Audio_' + Date.now() + '.webm';
+                document.body.appendChild(link);
                 link.click();
-                console.log('✅ Audio downloaded');
+                document.body.removeChild(link);
+                
+                console.log('✅ Audio download initiated');
+                
             } catch (err) {
-                console.error('❌ Error:', err);
-                alert('Error downloading audio');
+                console.error('❌ Download error:', err);
+                alert('Error downloading audio: ' + err.message);
             }
         }
 
         // DOWNLOAD REPORT
         function downloadReport() {
             if (!currentSub) return;
-            let report = '═══ ASSESSMENT REPORT ═══\n\n';
+            
+            let report = '═══════════════════════════════════════\n';
+            report += '   CUSTOMER SERVICE ASSESSMENT REPORT\n';
+            report += '═══════════════════════════════════════\n\n';
+            
+            report += '📋 CANDIDATE INFORMATION\n';
+            report += '─────────────────────────────────────\n';
             report += 'Name: ' + currentSub.candidateData.name + '\n';
             report += 'Email: ' + currentSub.candidateData.email + '\n';
-            report += 'Phone: ' + currentSub.candidateData.phone + '\n\n';
-            report += 'Score: ' + currentSub.percentage + '%\n';
-            report += 'Status: ' + (currentSub.passed ? 'PASSED' : 'FAILED') + '\n';
-            report += 'Time: ' + currentSub.timeTaken + '\n';
-            report += 'Audio: ' + (currentSub.audioBase64 ? 'Yes' : 'No') + '\n\n';
-            report += 'Security:\n';
-            report += 'Tab Switches: ' + (currentSub.tabSwitchCount || 0) + '\n';
-            report += 'Violations: ' + (currentSub.securityViolationCount || 0) + '\n';
+            report += 'Phone: ' + currentSub.candidateData.phone + '\n';
+            report += 'Submission ID: ' + currentSub.submissionId + '\n\n';
             
-            const blob = new Blob([report], {type: 'text/plain'});
+            report += '📊 TEST RESULTS\n';
+            report += '─────────────────────────────────────\n';
+            report += 'Score: ' + currentSub.percentage + '%\n';
+            report += 'Correct Answers: ' + currentSub.correctCount + '/' + currentSub.totalMCQ + '\n';
+            report += 'Status: ' + (currentSub.passed ? 'PASSED ✓' : 'FAILED ✗') + '\n';
+            report += 'Time Taken: ' + currentSub.timeTaken + '\n';
+            report += 'Submitted: ' + new Date(currentSub.submittedAt).toLocaleString() + '\n\n';
+            
+            report += '🎤 AUDIO INTRODUCTION\n';
+            report += '─────────────────────────────────────\n';
+            report += 'Audio Recorded: ' + (currentSub.audioBase64 ? 'Yes ✓' : 'No ✗') + '\n';
+            if (currentSub.audioBase64) {
+                report += 'Audio Size: ' + Math.round(currentSub.audioBase64.length / 1024) + ' KB\n';
+            }
+            report += '\n';
+            
+            report += '🔒 SECURITY & INTEGRITY\n';
+            report += '─────────────────────────────────────\n';
+            report += 'Tab Switches: ' + (currentSub.tabSwitchCount || 0) + '\n';
+            report += 'Security Violations: ' + (currentSub.securityViolationCount || 0) + '\n';
+            report += 'Session Token: ' + (currentSub.sessionToken || 'N/A') + '\n\n';
+            
+            report += '─────────────────────────────────────\n';
+            report += 'Report Generated: ' + new Date().toLocaleString() + '\n';
+            report += '═══════════════════════════════════════\n';
+            
+            const blob = new Blob([report], {type: 'text/plain;charset=utf-8'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Report.txt';
+            a.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Report_' + Date.now() + '.txt';
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            
+            console.log('✅ Report downloaded');
         }
 
-        // DOWNLOAD ALL
+        // VIEW ANSWERS (placeholder)
+        function viewAnswers() {
+            alert('Answer review feature - Coming soon!\n\nThis will show all MCQ and written answers.');
+        }
+
+        // DOWNLOAD ALL SUBMISSIONS
         function downloadAll() {
             if (allSubs.length === 0) {
                 alert('No submissions to download');
                 return;
             }
 
-            let report = '═══ ALL SUBMISSIONS ═══\n\n';
+            let report = '═══════════════════════════════════════\n';
+            report += '   ALL SUBMISSIONS SUMMARY\n';
+            report += '═══════════════════════════════════════\n\n';
             report += 'Generated: ' + new Date().toLocaleString() + '\n';
-            report += 'Total: ' + allSubs.length + '\n\n';
+            report += 'Total Submissions: ' + allSubs.length + '\n';
+            report += 'Passed: ' + allSubs.filter(s => s.passed).length + '\n';
+            report += 'Failed: ' + allSubs.filter(s => !s.passed).length + '\n\n';
 
             allSubs.forEach((sub, idx) => {
-                report += '──────────────\n';
+                report += '─────────────────────────────────────\n';
                 report += (idx + 1) + '. ' + sub.candidateData.name + '\n';
-                report += 'Email: ' + sub.candidateData.email + '\n';
-                report += 'Score: ' + sub.percentage + '%\n';
-                report += 'Status: ' + (sub.passed ? 'PASSED' : 'FAILED') + '\n\n';
+                report += '   Email: ' + sub.candidateData.email + '\n';
+                report += '   Score: ' + sub.percentage + '%\n';
+                report += '   Status: ' + (sub.passed ? 'PASSED' : 'FAILED') + '\n';
+                report += '   Audio: ' + (sub.audioBase64 ? 'Yes' : 'No') + '\n';
+                report += '   Date: ' + new Date(sub.submittedAt).toLocaleString() + '\n\n';
             });
 
-            const blob = new Blob([report], {type: 'text/plain'});
+            report += '═══════════════════════════════════════\n';
+
+            const blob = new Blob([report], {type: 'text/plain;charset=utf-8'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'All_Submissions_' + Date.now() + '.txt';
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            
+            console.log('✅ All submissions downloaded');
         }
 
-        console.log('✅ Admin panel ready');
+        console.log('✅ Admin panel initialized');
     </script>
 </body>
 </html>
