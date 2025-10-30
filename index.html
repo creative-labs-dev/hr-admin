@@ -12,23 +12,8 @@
     <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), payment=(), usb=(), microphone=()">
     <meta name="robots" content="noindex, nofollow">
     
-    <!-- STRICT CONTENT SECURITY POLICY -->
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'none';
-        script-src 'self' 'unsafe-inline' https://www.gstatic.com;
-        style-src 'self' 'unsafe-inline';
-        connect-src 'self' https://*.firebaseapp.com https://*.firebasedatabase.app https://*.googleapis.com wss://*.firebaseio.com;
-        img-src 'self' data: https:;
-        font-src 'self';
-        media-src 'self' blob: data:;
-        frame-src 'none';
-        base-uri 'self';
-        form-action 'none';
-    ">
+    <title>HR Admin Dashboard - Secured</title>
     
-    <title>HR Admin Dashboard</title>
-    
-    <!-- PROFESSIONAL FAVICON -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23dc3545'/%3E%3Ctext x='50' y='50' font-family='Arial, sans-serif' font-size='45' font-weight='bold' fill='white' text-anchor='middle' dominant-baseline='central'%3EHR%3C/text%3E%3C/svg%3E">
     <meta name="theme-color" content="#dc3545">
     
@@ -226,6 +211,16 @@
             box-shadow: var(--shadow-md);
         }
 
+        .btn-warning {
+            background: var(--warning);
+            color: #856404;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-2px);
+        }
+
         .btn-success {
             background: var(--success);
             color: white;
@@ -244,6 +239,12 @@
         .btn-danger:hover {
             background: #c82333;
             transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
         }
 
         .dashboard-content {
@@ -355,6 +356,10 @@
             background: #f8f9ff;
         }
 
+        .submissions-table tbody tr.unscored {
+            background: #fffbf0;
+        }
+
         .badge {
             padding: 6px 14px;
             border-radius: 20px;
@@ -373,6 +378,11 @@
         .badge.fail {
             background: #f8d7da;
             color: #721c24;
+        }
+
+        .badge.unscored {
+            background: #fff3cd;
+            color: #856404;
         }
 
         .badge.audio-yes {
@@ -748,6 +758,70 @@
             font-size: 13px;
             margin-left: 10px;
         }
+
+        .answers-section {
+            background: #f8f9ff;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .answers-section h3 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .answer-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .answer-item.correct {
+            border-left-color: var(--success);
+            background: #f0fff4;
+        }
+
+        .answer-item.incorrect {
+            border-left-color: var(--danger);
+            background: #fff5f5;
+        }
+
+        .answer-question {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .answer-response {
+            color: #333;
+            margin: 8px 0;
+            padding-left: 15px;
+        }
+
+        .answer-correct-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .answer-correct-indicator.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .answer-correct-indicator.incorrect {
+            background: #f8d7da;
+            color: #721c24;
+        }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -798,6 +872,10 @@
                 <button class="btn btn-primary" onclick="loadData()">
                     <span>🔄</span>
                     <span>Refresh Data</span>
+                </button>
+                <button class="btn btn-warning" onclick="scoreAllUnscored()" id="scoreBtn">
+                    <span>🎯</span>
+                    <span>Calculate Scores</span>
                 </button>
                 <button class="btn btn-success" onclick="downloadAll()">
                     <span>📥</span>
@@ -861,7 +939,7 @@
     </div>
 
     <script>
-        // XSS PROTECTION - Sanitize all output
+        // ============ XSS PROTECTION ============
         function escapeHtml(unsafe) {
             if (typeof unsafe !== 'string') return unsafe;
             return unsafe
@@ -872,13 +950,11 @@
                 .replace(/'/g, "&#039;");
         }
 
-        // Safe number display
         function safeNumber(num) {
             const parsed = parseInt(num);
             return (isNaN(parsed) || parsed < 0 || parsed > 100) ? 0 : parsed;
         }
 
-        // Safe date display
         function safeDate(dateString) {
             try {
                 const date = new Date(dateString);
@@ -888,10 +964,58 @@
             }
         }
 
+        // ============ GLOBAL VARIABLES ============
         let allSubs = [];
         let currentSub = null;
         let currentUser = null;
+        let correctAnswers = [];
+        const questions = [
+            "What is the most important skill in customer service?",
+            "A customer is angry about a delayed delivery. What should you do FIRST?",
+            "What does 'active listening' mean in customer service?",
+            "How should you handle a customer request you cannot immediately fulfill?",
+            "What is the best way to end a customer service interaction?",
+            "A customer is using inappropriate language. What should you do?",
+            "What is the purpose of asking clarifying questions?",
+            "How should you prioritize multiple customer requests?",
+            "What should you do if you don't know the answer to a customer's question?",
+            "What is the key to building customer loyalty?",
+            "When should you escalate a customer issue to a supervisor?",
+            "What is the best approach to handling customer complaints?",
+            "How should you communicate with a customer who is hard to understand?",
+            "What does 'going the extra mile' mean in customer service?",
+            "How should you handle multiple tasks while assisting a customer?",
+            "What is the importance of product knowledge in customer service?",
+            "How should you respond to positive customer feedback?",
+            "What is the best way to handle an upset customer who wants a refund outside of policy?",
+            "Describe a time when you successfully handled a difficult customer situation...",
+            "Imagine a customer contacts you saying they received the wrong product..."
+        ];
 
+        const questionOptions = [
+            ["Speed of response", "Active listening and empathy", "Technical knowledge only", "Following scripts exactly"],
+            ["Explain company policies", "Acknowledge their frustration and apologize", "Transfer them to a manager", "Offer a discount immediately"],
+            ["Listening while doing other tasks", "Fully concentrating, understanding, and responding appropriately", "Waiting for your turn to speak", "Taking notes only"],
+            ["Say 'I don't know' and end the call", "Set clear expectations and follow up", "Make promises you might not keep", "Ignore the request"],
+            ["Hang up quickly", "Ask if there's anything else you can help with and thank them", "Just say goodbye", "Transfer to another department"],
+            ["Use inappropriate language back", "Remain professional and politely request respectful communication", "Hang up immediately", "Laugh it off"],
+            ["To confuse the customer", "To fully understand the customer's issue and provide accurate solutions", "To extend call time", "To show off knowledge"],
+            ["Random order", "By urgency and impact", "Ignore less important ones", "Only help familiar customers"],
+            ["Make up an answer", "Admit you don't know and find someone who does or research it", "Change the subject", "Blame the customer"],
+            ["Low prices only", "Consistent, reliable, and personalized service", "Fancy marketing", "Long phone calls"],
+            ["For every single request", "When you've exhausted your authority and resources", "Never escalate", "Only on Fridays"],
+            ["Defend the company immediately", "Listen, empathize, apologize, and offer solutions", "Blame other departments", "Minimize the issue"],
+            ["Pretend you understand", "Ask politely for clarification and confirm understanding", "Get frustrated and transfer", "Speak louder"],
+            ["Working overtime", "Exceeding expectations and providing exceptional service", "Doing the bare minimum", "Selling more products"],
+            ["Multitask constantly", "Focus fully on the customer, then handle other tasks", "Ask the customer to wait indefinitely", "Rush through everything"],
+            ["Not important at all", "Helps provide accurate information and build trust", "Only for sales people", "Can be ignored"],
+            ["Ignore it", "Thank them and share it with your team", "Ask for money", "Take all credit yourself"],
+            ["Immediately say no", "Explain the policy empathetically and explore alternative solutions", "Give refund without checking", "Argue about the policy"],
+            null,
+            null
+        ];
+
+        // ============ AUTHENTICATION ============
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
@@ -939,6 +1063,124 @@
             }
         }
 
+        // ============ LOAD CORRECT ANSWERS FROM FIREBASE ============
+        async function loadCorrectAnswers() {
+            try {
+                const snapshot = await database.ref('correctAnswers').once('value');
+                if (snapshot.exists()) {
+                    const answersObj = snapshot.val();
+                    correctAnswers = Object.keys(answersObj)
+                        .sort((a, b) => parseInt(a) - parseInt(b))
+                        .map(key => answersObj[key]);
+                    console.log('✅ Loaded correct answers:', correctAnswers.length);
+                    return true;
+                } else {
+                    console.error('❌ No correct answers found in Firebase');
+                    alert('ERROR: Correct answers not found in database.\n\nPlease add them to Firebase:\n1. Go to Firebase Console\n2. Database → Add "correctAnswers" node\n3. Import the correct answers JSON');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Error loading answers:', error);
+                alert('Error loading correct answers: ' + error.message);
+                return false;
+            }
+        }
+
+        // ============ CALCULATE SCORE FOR SUBMISSION ============
+        async function calculateScore(submissionKey, submission) {
+            if (!correctAnswers || correctAnswers.length === 0) {
+                console.log('Loading correct answers first...');
+                const loaded = await loadCorrectAnswers();
+                if (!loaded) return false;
+            }
+
+            let correctCount = 0;
+            let totalMCQ = 0;
+
+            submission.answers.forEach((answer, index) => {
+                if (index < 18) { // First 18 are MCQ
+                    totalMCQ++;
+                    if (answer === correctAnswers[index]) {
+                        correctCount++;
+                    }
+                }
+            });
+
+            const percentage = Math.round((correctCount / totalMCQ) * 100);
+            const passed = percentage >= 70;
+
+            try {
+                await database.ref(`submissions/${submissionKey}`).update({
+                    correctCount: correctCount,
+                    totalMCQ: totalMCQ,
+                    percentage: percentage,
+                    passed: passed,
+                    scored: true,
+                    scoredAt: new Date().toISOString(),
+                    scoredBy: currentUser.email
+                });
+
+                console.log(`✅ Scored ${submission.submissionId}: ${percentage}%`);
+                return true;
+            } catch (error) {
+                console.error('❌ Error updating score:', error);
+                return false;
+            }
+        }
+
+        // ============ SCORE ALL UNSCORED SUBMISSIONS ============
+        async function scoreAllUnscored() {
+            if (!currentUser) {
+                alert('Please login first');
+                return;
+            }
+
+            const scoreBtn = document.getElementById('scoreBtn');
+            scoreBtn.disabled = true;
+            scoreBtn.innerHTML = '<span>⏳</span><span>Scoring...</span>';
+
+            try {
+                const loaded = await loadCorrectAnswers();
+                if (!loaded) {
+                    scoreBtn.disabled = false;
+                    scoreBtn.innerHTML = '<span>🎯</span><span>Calculate Scores</span>';
+                    return;
+                }
+
+                const snapshot = await database.ref('submissions').once('value');
+                const promises = [];
+                let unscoredCount = 0;
+
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    if (!data.scored && !data.percentage) {
+                        promises.push(calculateScore(child.key, data));
+                        unscoredCount++;
+                    }
+                });
+
+                if (unscoredCount === 0) {
+                    alert('✅ All submissions already scored!');
+                    scoreBtn.disabled = false;
+                    scoreBtn.innerHTML = '<span>🎯</span><span>Calculate Scores</span>';
+                    return;
+                }
+
+                const results = await Promise.all(promises);
+                const successCount = results.filter(r => r === true).length;
+
+                alert(`✅ Successfully scored ${successCount} of ${unscoredCount} submission(s)!`);
+                loadData(); // Reload to show updated scores
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error scoring submissions: ' + error.message);
+            } finally {
+                scoreBtn.disabled = false;
+                scoreBtn.innerHTML = '<span>🎯</span><span>Calculate Scores</span>';
+            }
+        }
+
+        // ============ LOAD DATA ============
         function loadData() {
             if (!currentUser) {
                 alert('Please login first');
@@ -948,56 +1190,63 @@
             console.log('🔄 Loading submissions...');
             document.getElementById('tableContent').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading submissions...</p></div>';
 
-            database.ref('submissions').once('value')
-                .then(snapshot => {
-                    allSubs = [];
-                    
-                    if (!snapshot.exists()) {
-                        console.log('ℹ️ No submissions found');
-                        document.getElementById('tableContent').innerHTML = `
-                            <div class="empty-state">
-                                <h3>No Submissions Yet</h3>
-                                <p>Submissions will appear here once candidates complete the assessment.</p>
-                            </div>
-                        `;
-                        updateStats();
-                        return;
-                    }
-
-                    snapshot.forEach(child => {
-                        const data = child.val();
-                        allSubs.push(data);
-                    });
-                    
-                    console.log('✅ Loaded', allSubs.length, 'submission(s)');
-                    allSubs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-                    
-                    updateStats();
-                    renderTable();
-                })
-                .catch(err => {
-                    console.error('❌ Error:', err);
-                    const safeError = escapeHtml(err.message);
+            // Load correct answers first, then load submissions
+            loadCorrectAnswers().then(() => {
+                return database.ref('submissions').once('value');
+            })
+            .then(snapshot => {
+                allSubs = [];
+                
+                if (!snapshot.exists()) {
+                    console.log('ℹ️ No submissions found');
                     document.getElementById('tableContent').innerHTML = `
                         <div class="empty-state">
-                            <h3>Error Loading Data</h3>
-                            <p>${safeError}</p>
+                            <h3>No Submissions Yet</h3>
+                            <p>Submissions will appear here once candidates complete the assessment.</p>
                         </div>
                     `;
+                    updateStats();
+                    return;
+                }
+
+                snapshot.forEach(child => {
+                    const data = child.val();
+                    data._firebaseKey = child.key; // Store key for updates
+                    allSubs.push(data);
                 });
+                
+                console.log('✅ Loaded', allSubs.length, 'submission(s)');
+                allSubs.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+                
+                updateStats();
+                renderTable();
+            })
+            .catch(err => {
+                console.error('❌ Error:', err);
+                const safeError = escapeHtml(err.message);
+                document.getElementById('tableContent').innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error Loading Data</h3>
+                        <p>${safeError}</p>
+                    </div>
+                `;
+            });
         }
 
+        // ============ UPDATE STATS ============
         function updateStats() {
             const total = allSubs.length;
-            const passed = allSubs.filter(s => s.passed).length;
-            const avg = total > 0 ? Math.round(allSubs.reduce((sum, s) => sum + safeNumber(s.percentage), 0) / total) : 0;
+            const scored = allSubs.filter(s => s.scored || s.percentage !== undefined);
+            const passed = scored.filter(s => s.passed).length;
+            const avg = scored.length > 0 ? Math.round(scored.reduce((sum, s) => sum + safeNumber(s.percentage), 0) / scored.length) : 0;
 
             document.getElementById('totalSubs').textContent = total;
             document.getElementById('totalPassed').textContent = passed;
-            document.getElementById('totalFailed').textContent = total - passed;
+            document.getElementById('totalFailed').textContent = scored.length - passed;
             document.getElementById('avgScore').textContent = safeNumber(avg) + '%';
         }
 
+        // ============ RENDER TABLE ============
         function renderTable() {
             if (allSubs.length === 0) {
                 document.getElementById('tableContent').innerHTML = `
@@ -1029,18 +1278,23 @@
             allSubs.forEach((sub, idx) => {
                 const safeName = escapeHtml(sub.candidateData?.name || 'N/A');
                 const safeEmail = escapeHtml(sub.candidateData?.email || 'N/A');
-                const percentage = safeNumber(sub.percentage);
+                const isScored = sub.scored || sub.percentage !== undefined;
+                const percentage = isScored ? safeNumber(sub.percentage) : '—';
+                const scoreDisplay = isScored ? `${percentage}%` : '<span style="color:var(--warning);">⏳ Pending</span>';
+                const statusBadge = isScored ? 
+                    `<span class="badge ${sub.passed ? 'pass' : 'fail'}">${sub.passed ? 'PASSED' : 'FAILED'}</span>` :
+                    `<span class="badge unscored">UNSCORED</span>`;
                 const hasAudio = sub.audioBase64 && sub.audioBase64.length > 100;
                 const violations = safeNumber(sub.securityViolationCount);
                 const violationColor = violations > 10 ? 'var(--danger)' : violations > 5 ? 'var(--warning)' : 'var(--success)';
                 const date = safeDate(sub.submittedAt);
                 
                 html += `
-                    <tr>
+                    <tr class="${!isScored ? 'unscored' : ''}">
                         <td><strong>${safeName}</strong></td>
                         <td>${safeEmail}</td>
-                        <td><strong style="font-size:16px;">${percentage}%</strong></td>
-                        <td><span class="badge ${sub.passed ? 'pass' : 'fail'}">${sub.passed ? 'PASSED' : 'FAILED'}</span></td>
+                        <td><strong style="font-size:16px;">${scoreDisplay}</strong></td>
+                        <td>${statusBadge}</td>
                         <td><span class="badge ${hasAudio ? 'audio-yes' : 'audio-no'}">${hasAudio ? '🎙️ YES' : '❌ NO'}</span></td>
                         <td><strong style="color:${violationColor};font-size:16px;">${violations}</strong></td>
                         <td>${date}</td>
@@ -1053,6 +1307,7 @@
             document.getElementById('tableContent').innerHTML = html;
         }
 
+        // ============ GENERATE VIOLATION BREAKDOWN ============
         function generateViolationBreakdown(sub) {
             const breakdown = sub.securityBreakdown || {};
             const total = safeNumber(sub.securityViolationCount);
@@ -1110,6 +1365,61 @@
             return html;
         }
 
+        // ============ GENERATE ANSWERS REVIEW ============
+        function generateAnswersReview(sub) {
+            if (!sub.answers || sub.answers.length === 0) {
+                return '<p>No answers available</p>';
+            }
+
+            const isScored = sub.scored || sub.percentage !== undefined;
+
+            let html = `
+                <div class="answers-section">
+                    <h3>📝 Answer Review ${isScored ? '' : '(Unscored - Use "Calculate Scores" button)'}</h3>
+            `;
+
+            sub.answers.forEach((answer, index) => {
+                const questionText = questions[index] || `Question ${index + 1}`;
+                const isCorrect = isScored && index < 18 && answer === correctAnswers[index];
+                const itemClass = !isScored ? '' : (isCorrect ? 'correct' : (index < 18 ? 'incorrect' : ''));
+
+                html += `<div class="answer-item ${itemClass}">`;
+                html += `<div class="answer-question">Q${index + 1}: ${escapeHtml(questionText)}</div>`;
+
+                if (index < 18) { // MCQ
+                    const options = questionOptions[index];
+                    if (options && answer !== null && answer !== undefined) {
+                        const answerText = options[answer] || 'Invalid answer';
+                        html += `<div class="answer-response"><strong>Answer:</strong> ${escapeHtml(answerText)}</div>`;
+                        
+                        if (isScored) {
+                            const correctText = options[correctAnswers[index]];
+                            if (isCorrect) {
+                                html += `<span class="answer-correct-indicator correct">✓ Correct</span>`;
+                            } else {
+                                html += `<span class="answer-correct-indicator incorrect">✗ Incorrect (Correct: ${escapeHtml(correctText)})</span>`;
+                            }
+                        }
+                    } else {
+                        html += `<div class="answer-response" style="color:#999;"><em>No answer provided</em></div>`;
+                    }
+                } else { // Written
+                    if (answer && typeof answer === 'string' && answer.trim().length > 0) {
+                        const words = answer.trim().split(/\s+/).length;
+                        html += `<div class="answer-response"><strong>Response (${words} words):</strong><br>${escapeHtml(answer)}</div>`;
+                    } else {
+                        html += `<div class="answer-response" style="color:#999;"><em>No answer provided</em></div>`;
+                    }
+                }
+
+                html += `</div>`;
+            });
+
+            html += `</div>`;
+            return html;
+        }
+
+        // ============ VIEW SUBMISSION ============
         function viewSub(idx) {
             currentSub = allSubs[idx];
             
@@ -1117,9 +1427,10 @@
             const safeEmail = escapeHtml(currentSub.candidateData?.email || 'N/A');
             const safePhone = escapeHtml(currentSub.candidateData?.phone || 'N/A');
             const safeSubmissionId = escapeHtml(currentSub.submissionId || 'N/A');
-            const percentage = safeNumber(currentSub.percentage);
-            const correctCount = safeNumber(currentSub.correctCount);
-            const totalMCQ = safeNumber(currentSub.totalMCQ);
+            const isScored = currentSub.scored || currentSub.percentage !== undefined;
+            const percentage = isScored ? safeNumber(currentSub.percentage) : 'Not yet scored';
+            const correctCount = isScored ? safeNumber(currentSub.correctCount) : '—';
+            const totalMCQ = isScored ? safeNumber(currentSub.totalMCQ) : 18;
             const safeTimeTaken = escapeHtml(currentSub.timeTaken || 'N/A');
             const date = safeDate(currentSub.submittedAt);
 
@@ -1155,11 +1466,18 @@
             html += `
                 <div class="info-section">
                     <h3>📊 Test Results</h3>
-                    <p><strong>Score:</strong> ${percentage}% (${correctCount}/${totalMCQ} correct)</p>
-                    <p><strong>Status:</strong> <span class="badge ${currentSub.passed ? 'pass' : 'fail'}">${currentSub.passed ? 'PASSED ✓' : 'FAILED ✗'}</span></p>
+                    ${isScored ? `
+                        <p><strong>Score:</strong> ${percentage}% (${correctCount}/${totalMCQ} correct)</p>
+                        <p><strong>Status:</strong> <span class="badge ${currentSub.passed ? 'pass' : 'fail'}">${currentSub.passed ? 'PASSED ✓' : 'FAILED ✗'}</span></p>
+                    ` : `
+                        <p style="background:#fff3cd;padding:15px;border-radius:8px;"><strong>⏳ Unscored Submission</strong><br>Click "Calculate Scores" button in the dashboard to score this submission.</p>
+                    `}
                     <p><strong>Time Taken:</strong> ${safeTimeTaken}</p>
                     <p><strong>Submitted:</strong> ${date}</p>
+                    ${isScored && currentSub.scoredBy ? `<p><strong>Scored By:</strong> ${escapeHtml(currentSub.scoredBy)}</p>` : ''}
                 </div>
+
+                ${generateAnswersReview(currentSub)}
 
                 <div class="info-section">
                     <h3>🔒 Security & Integrity Report</h3>
@@ -1180,6 +1498,7 @@
             }, 100);
         }
 
+        // ============ CLOSE MODAL ============
         function closeModal() {
             const audio = document.getElementById('modalAudio');
             if (audio) {
@@ -1193,6 +1512,7 @@
             if (e.target === this) closeModal();
         });
 
+        // ============ DOWNLOAD AUDIO ============
         function downloadAudio() {
             if (!currentSub || !currentSub.audioBase64) {
                 alert('No audio available');
@@ -1212,6 +1532,7 @@
             }
         }
 
+        // ============ DOWNLOAD REPORT ============
         function downloadReport() {
             if (!currentSub) return;
             
@@ -1219,21 +1540,36 @@
             const safeEmail = escapeHtml(currentSub.candidateData?.email || 'N/A');
             const safePhone = escapeHtml(currentSub.candidateData?.phone || 'N/A');
             const safeId = escapeHtml(currentSub.submissionId || 'N/A');
+            const isScored = currentSub.scored || currentSub.percentage !== undefined;
             
             let report = '═══════════════════════════════════════\n';
-            report += '   ASSESSMENT REPORT\n';
+            report += '   CUSTOMER SERVICE ASSESSMENT REPORT\n';
             report += '═══════════════════════════════════════\n\n';
-            report += '📋 CANDIDATE\n';
+            report += '📋 CANDIDATE INFORMATION\n';
             report += '─────────────────────────────────────\n';
             report += 'Name: ' + safeName + '\n';
             report += 'Email: ' + safeEmail + '\n';
             report += 'Phone: ' + safePhone + '\n';
-            report += 'ID: ' + safeId + '\n\n';
-            report += '📊 RESULTS\n';
+            report += 'Submission ID: ' + safeId + '\n\n';
+            report += '📊 TEST RESULTS\n';
             report += '─────────────────────────────────────\n';
-            report += 'Score: ' + safeNumber(currentSub.percentage) + '%\n';
-            report += 'Status: ' + (currentSub.passed ? 'PASSED ✓' : 'FAILED ✗') + '\n';
-            report += 'Date: ' + safeDate(currentSub.submittedAt) + '\n';
+            if (isScored) {
+                report += 'Score: ' + safeNumber(currentSub.percentage) + '%\n';
+                report += 'Correct Answers: ' + safeNumber(currentSub.correctCount) + '/' + safeNumber(currentSub.totalMCQ) + '\n';
+                report += 'Status: ' + (currentSub.passed ? 'PASSED ✓' : 'FAILED ✗') + '\n';
+            } else {
+                report += 'Status: UNSCORED\n';
+            }
+            report += 'Time Taken: ' + escapeHtml(currentSub.timeTaken || 'N/A') + '\n';
+            report += 'Submitted: ' + safeDate(currentSub.submittedAt) + '\n\n';
+            report += '🔒 SECURITY REPORT\n';
+            report += '─────────────────────────────────────\n';
+            report += 'Total Violations: ' + safeNumber(currentSub.securityViolationCount) + '\n';
+            report += 'Tab Switches: ' + safeNumber(currentSub.tabSwitchCount) + '\n';
+            if (currentSub.securityBreakdown) {
+                report += 'Paste Attempts: ' + safeNumber(currentSub.securityBreakdown.pasteAttempts) + '\n';
+                report += 'DevTools Attempts: ' + safeNumber(currentSub.securityBreakdown.devToolsAttempts) + '\n';
+            }
             report += '\n═══════════════════════════════════════\n';
             
             const blob = new Blob([report], {type: 'text/plain'});
@@ -1248,6 +1584,7 @@
             URL.revokeObjectURL(url);
         }
 
+        // ============ DOWNLOAD ALL ============
         function downloadAll() {
             if (allSubs.length === 0) {
                 alert('No submissions to download');
@@ -1258,16 +1595,24 @@
             report += '   ALL SUBMISSIONS SUMMARY\n';
             report += '═══════════════════════════════════════\n\n';
             report += 'Generated: ' + new Date().toLocaleString() + '\n';
-            report += 'Total: ' + allSubs.length + '\n\n';
+            report += 'Total Submissions: ' + allSubs.length + '\n';
+            report += 'Generated By: ' + escapeHtml(currentUser.email) + '\n\n';
 
             allSubs.forEach((sub, idx) => {
                 const safeName = escapeHtml(sub.candidateData?.name || 'N/A');
                 const safeEmail = escapeHtml(sub.candidateData?.email || 'N/A');
+                const isScored = sub.scored || sub.percentage !== undefined;
                 report += '─────────────────────────────────────\n';
                 report += (idx + 1) + '. ' + safeName + '\n';
                 report += '   Email: ' + safeEmail + '\n';
-                report += '   Score: ' + safeNumber(sub.percentage) + '%\n';
-                report += '   Status: ' + (sub.passed ? 'PASSED' : 'FAILED') + '\n\n';
+                if (isScored) {
+                    report += '   Score: ' + safeNumber(sub.percentage) + '%\n';
+                    report += '   Status: ' + (sub.passed ? 'PASSED' : 'FAILED') + '\n';
+                } else {
+                    report += '   Status: UNSCORED\n';
+                }
+                report += '   Violations: ' + safeNumber(sub.securityViolationCount) + '\n';
+                report += '   Submitted: ' + safeDate(sub.submittedAt) + '\n\n';
             });
 
             report += '═══════════════════════════════════════\n';
@@ -1283,7 +1628,7 @@
             URL.revokeObjectURL(url);
         }
 
-        console.log('✅ Secured admin panel initialized');
+        console.log('✅ Secured admin panel initialized with scoring capability');
     </script>
 </body>
 </html>
