@@ -2,7 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- SECURITY HEADERS -->
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="no-referrer">
+    <meta name="robots" content="noindex, nofollow">
+    
     <title>HR Admin Dashboard</title>
     <style>
         * {
@@ -11,10 +19,27 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --primary: #1e3c72;
+            --primary-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --info: #17a2b8;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --border: #dee2e6;
+            --shadow-sm: 0 2px 4px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.15);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #f5f7fa;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
         .page {
@@ -25,28 +50,31 @@
             display: block;
         }
 
+        /* LOGIN */
         .login-container {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: var(--primary-gradient);
+            padding: 20px;
         }
 
         .login-box {
             background: white;
             padding: 50px;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: var(--shadow-lg);
             width: 100%;
             max-width: 450px;
             text-align: center;
         }
 
         .login-box h1 {
-            color: #1e3c72;
+            color: var(--primary);
             margin-bottom: 15px;
             font-size: 32px;
+            font-weight: 700;
         }
 
         .login-box p {
@@ -56,62 +84,78 @@
         }
 
         .security-badge {
-            background: #dc3545;
+            background: var(--danger);
             color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
             font-size: 14px;
             margin-bottom: 25px;
             display: inline-block;
+            font-weight: 600;
         }
 
         .login-box input {
             width: 100%;
-            padding: 16px;
-            margin-bottom: 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
             font-size: 16px;
+            transition: var(--transition);
         }
 
         .login-box input:focus {
             outline: none;
-            border-color: #2a5298;
-            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(30, 60, 114, 0.1);
         }
 
         .login-box button {
             width: 100%;
             padding: 16px;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: var(--primary-gradient);
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 17px;
+            border-radius: 12px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .login-box button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 60, 114, 0.3);
         }
 
         .error-message {
-            color: #dc3545;
+            color: var(--danger);
             margin-top: 15px;
             display: none;
+            font-weight: 500;
         }
 
         .error-message.show {
             display: block;
         }
 
+        /* DASHBOARD */
         .dashboard-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: var(--primary-gradient);
             color: white;
             padding: 30px 40px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow-md);
         }
 
         .dashboard-header h1 {
             font-size: 32px;
             margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .dashboard-header p {
+            opacity: 0.9;
+            font-size: 14px;
         }
 
         .header-actions {
@@ -124,37 +168,56 @@
         .btn {
             padding: 12px 24px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .btn-primary {
             background: white;
-            color: #1e3c72;
+            color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
 
         .btn-success {
-            background: #28a745;
+            background: var(--success);
             color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
         }
 
         .btn-danger {
-            background: #dc3545;
+            background: var(--danger);
             color: white;
         }
 
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
         .dashboard-content {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 40px 20px;
         }
 
+        /* STATS */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 25px;
             margin-bottom: 40px;
         }
@@ -162,41 +225,66 @@
         .stat-card {
             background: white;
             padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            border-left: 5px solid #2a5298;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            border-left: 5px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
         }
 
         .stat-card h3 {
-            color: #666;
+            color: #6c757d;
             font-size: 14px;
             text-transform: uppercase;
             margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
 
         .stat-card .stat-value {
-            color: #1e3c72;
+            color: var(--primary);
             font-size: 42px;
             font-weight: bold;
             margin-bottom: 8px;
+            font-variant-numeric: tabular-nums;
         }
 
+        .stat-card .stat-change {
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        /* TABLE */
         .table-container {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
             overflow: hidden;
         }
 
         .table-header {
             padding: 25px 30px;
-            background: #f8f9fa;
-            border-bottom: 2px solid #e0e0e0;
+            background: var(--light);
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .table-header h2 {
-            color: #1e3c72;
+            color: var(--primary);
             font-size: 24px;
+            font-weight: 700;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
         }
 
         .submissions-table {
@@ -205,7 +293,7 @@
         }
 
         .submissions-table thead {
-            background: #1e3c72;
+            background: var(--primary);
             color: white;
         }
 
@@ -214,19 +302,31 @@
             text-align: left;
             font-weight: 600;
             font-size: 14px;
+            white-space: nowrap;
         }
 
         .submissions-table td {
             padding: 18px 20px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .submissions-table tbody tr {
+            transition: var(--transition);
+        }
+
+        .submissions-table tbody tr:hover {
+            background: #f8f9ff;
         }
 
         .badge {
-            padding: 6px 12px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
             display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .badge.pass {
@@ -250,14 +350,23 @@
         }
 
         .btn-view {
-            background: #2a5298;
+            background: var(--primary);
             color: white;
             padding: 8px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
         }
 
+        .btn-view:hover {
+            background: #1a3461;
+            transform: scale(1.05);
+        }
+
+        /* MODAL */
         .modal {
             display: none !important;
             position: fixed;
@@ -265,10 +374,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.8);
             z-index: 99999;
             overflow-y: auto;
             padding: 40px 20px;
+            animation: fadeIn 0.3s;
         }
 
         .modal.show {
@@ -277,13 +387,26 @@
             justify-content: center;
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         .modal-content {
             background: white;
             padding: 40px;
-            border-radius: 15px;
-            max-width: 1000px;
+            border-radius: 20px;
+            max-width: 1100px;
             width: 100%;
             margin: auto;
+            animation: slideUp 0.3s;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-header {
@@ -291,43 +414,203 @@
             justify-content: space-between;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 3px solid #f0f0f0;
+            border-bottom: 3px solid var(--light);
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            color: var(--primary);
+            font-size: 28px;
+            font-weight: 700;
         }
 
         .close-modal {
-            background: #dc3545;
+            background: var(--danger);
             color: white;
             border: none;
             padding: 10px 20px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
         }
 
+        .close-modal:hover {
+            background: #c82333;
+            transform: scale(1.05);
+        }
+
+        .info-section {
+            background: var(--light);
+            padding: 25px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid var(--primary);
+        }
+
+        .info-section h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .info-section p {
+            margin: 10px 0;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .info-section strong {
+            color: var(--primary);
+        }
+
+        /* AUDIO SECTION */
         .audio-section {
             background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-            padding: 25px;
+            padding: 30px;
             border-radius: 12px;
             margin: 30px 0;
         }
 
-        .audio-player {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 15px;
+        .audio-section h3 {
+            color: #0d47a1;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
         }
 
+        .audio-player {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .audio-player audio {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .audio-info {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        /* VIOLATION BREAKDOWN */
+        .violation-breakdown {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .violation-breakdown h4 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .violation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .violation-item {
+            background: var(--light);
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--warning);
+        }
+
+        .violation-item.high {
+            border-left-color: var(--danger);
+            background: #fff5f5;
+        }
+
+        .violation-item.zero {
+            border-left-color: var(--success);
+            background: #f0fff4;
+        }
+
+        .violation-label {
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .violation-label small {
+            display: block;
+            color: #666;
+            font-size: 12px;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        .violation-count {
+            background: var(--warning);
+            color: #856404;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .violation-count.high {
+            background: var(--danger);
+            color: white;
+        }
+
+        .violation-count.zero {
+            background: var(--success);
+            color: white;
+        }
+
+        .violation-alert {
+            padding: 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .violation-alert.high {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid var(--danger);
+        }
+
+        .violation-alert.moderate {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid var(--warning);
+        }
+
+        .violation-alert.low {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid var(--success);
+        }
+
+        /* LOADING */
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 60px 20px;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #2a5298;
+            border: 4px solid var(--light);
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
         }
@@ -337,51 +620,93 @@
             100% { transform: rotate(360deg); }
         }
 
-        .info-section {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                padding: 20px;
+            }
+
+            .dashboard-header h1 {
+                font-size: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .header-actions .btn {
+                flex: 1;
+            }
+
+            .modal-content {
+                padding: 25px 20px;
+            }
+
+            .modal-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .modal-header h2 {
+                font-size: 22px;
+            }
+
+            .violation-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .submissions-table {
+                font-size: 13px;
+            }
+
+            .submissions-table th,
+            .submissions-table td {
+                padding: 12px 10px;
+            }
         }
 
-        .info-section h3 {
-            color: #1e3c72;
-            margin-bottom: 15px;
-            font-size: 18px;
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
         }
 
-        .info-section p {
-            margin: 10px 0;
-            color: #333;
+        ::-webkit-scrollbar-track {
+            background: var(--light);
         }
 
-        .violation-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 5px;
         }
 
-        .violation-table td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #e0e0e0;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #1a3461;
         }
 
-        .violation-count {
-            background: #fff3cd;
-            color: #721c24;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 14px;
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
         }
 
-        .violation-count.high {
-            background: #f8d7da;
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #495057;
         }
 
-        .violation-count.zero {
-            background: #d4edda;
-            color: #155724;
+        .empty-state p {
+            font-size: 16px;
         }
     </style>
 
@@ -401,66 +726,89 @@
         
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        console.log('🔥 Firebase initialized');
     </script>
 </head>
 <body>
+    <!-- LOGIN PAGE -->
     <div id="loginPage" class="page active">
         <div class="login-container">
             <div class="login-box">
                 <div class="security-badge">🔐 ADMIN ACCESS ONLY</div>
                 <h1>HR Admin Panel</h1>
-                <p>Enter password to access dashboard</p>
+                <p>Enter password to access the dashboard</p>
                 <form id="loginForm">
-                    <input type="password" id="adminPassword" placeholder="Admin Password" required>
+                    <input type="password" id="adminPassword" placeholder="Admin Password" required autocomplete="off">
                     <button type="submit">Access Dashboard</button>
                 </form>
-                <div class="error-message" id="loginError">❌ Incorrect password</div>
+                <div class="error-message" id="loginError">❌ Incorrect password. Access denied.</div>
             </div>
         </div>
     </div>
 
+    <!-- DASHBOARD PAGE -->
     <div id="dashboardPage" class="page">
         <div class="dashboard-header">
             <h1>📊 HR Assessment Dashboard</h1>
+            <p>Customer Service Assessment Results</p>
             <div class="header-actions">
-                <button class="btn btn-primary" onclick="loadData()">🔄 Refresh</button>
-                <button class="btn btn-success" onclick="downloadAll()">📥 Download All</button>
-                <button class="btn btn-danger" onclick="logout()">🚪 Logout</button>
+                <button class="btn btn-primary" onclick="loadData()">
+                    <span>🔄</span>
+                    <span>Refresh Data</span>
+                </button>
+                <button class="btn btn-success" onclick="downloadAll()">
+                    <span>📥</span>
+                    <span>Download All</span>
+                </button>
+                <button class="btn btn-danger" onclick="logout()">
+                    <span>🚪</span>
+                    <span>Logout</span>
+                </button>
             </div>
         </div>
 
         <div class="dashboard-content">
+            <!-- STATS -->
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>Total Submissions</h3>
                     <div class="stat-value" id="totalSubs">0</div>
+                    <div class="stat-change">All time</div>
                 </div>
-                <div class="stat-card" style="border-left-color: #28a745;">
+                <div class="stat-card" style="border-left-color: var(--success);">
                     <h3>Passed</h3>
-                    <div class="stat-value" id="totalPassed" style="color: #28a745;">0</div>
+                    <div class="stat-value" id="totalPassed" style="color: var(--success);">0</div>
+                    <div class="stat-change">70% or higher</div>
                 </div>
-                <div class="stat-card" style="border-left-color: #dc3545;">
+                <div class="stat-card" style="border-left-color: var(--danger);">
                     <h3>Failed</h3>
-                    <div class="stat-value" id="totalFailed" style="color: #dc3545;">0</div>
+                    <div class="stat-value" id="totalFailed" style="color: var(--danger);">0</div>
+                    <div class="stat-change">Below 70%</div>
                 </div>
-                <div class="stat-card" style="border-left-color: #ffc107;">
+                <div class="stat-card" style="border-left-color: var(--warning);">
                     <h3>Average Score</h3>
-                    <div class="stat-value" id="avgScore" style="color: #ffc107;">0%</div>
+                    <div class="stat-value" id="avgScore" style="color: var(--warning);">0%</div>
+                    <div class="stat-change">Mean percentage</div>
                 </div>
             </div>
 
+            <!-- TABLE -->
             <div class="table-container">
                 <div class="table-header">
                     <h2>All Submissions</h2>
                 </div>
-                <div id="tableContent">
-                    <div class="loading"><div class="spinner"></div><p>Loading...</p></div>
+                <div class="table-wrapper">
+                    <div id="tableContent">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading submissions...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- DETAIL MODAL -->
     <div id="detailModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -479,24 +827,31 @@
         // LOGIN
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            if (document.getElementById('adminPassword').value === ADMIN_PASSWORD) {
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_PASSWORD) {
                 document.getElementById('loginPage').classList.remove('active');
                 document.getElementById('dashboardPage').classList.add('active');
                 loadData();
             } else {
                 document.getElementById('loginError').classList.add('show');
+                setTimeout(() => {
+                    document.getElementById('loginError').classList.remove('show');
+                }, 3000);
             }
         });
 
         function logout() {
-            document.getElementById('adminPassword').value = '';
-            document.getElementById('loginPage').classList.add('active');
-            document.getElementById('dashboardPage').classList.remove('active');
+            if (confirm('Are you sure you want to logout?')) {
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('loginPage').classList.add('active');
+                document.getElementById('dashboardPage').classList.remove('active');
+            }
         }
 
         // LOAD DATA
         function loadData() {
-            console.log('🔄 Loading submissions from Firebase...');
+            console.log('🔄 Loading submissions...');
             document.getElementById('tableContent').innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading submissions...</p></div>';
 
             database.ref('submissions').once('value')
@@ -505,7 +860,12 @@
                     
                     if (!snapshot.exists()) {
                         console.log('ℹ️ No submissions found');
-                        document.getElementById('tableContent').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">No submissions yet. Submissions will appear here once candidates complete the assessment.</p>';
+                        document.getElementById('tableContent').innerHTML = `
+                            <div class="empty-state">
+                                <h3>No Submissions Yet</h3>
+                                <p>Submissions will appear here once candidates complete the assessment.</p>
+                            </div>
+                        `;
                         updateStats();
                         return;
                     }
@@ -515,9 +875,7 @@
                         allSubs.push(data);
                         
                         if (data.audioBase64) {
-                            console.log('✅ Audio found for:', data.candidateData.name, '| Size:', Math.round(data.audioBase64.length / 1024), 'KB');
-                        } else {
-                            console.log('⚠️ No audio for:', data.candidateData.name);
+                            console.log('✅ Audio:', data.candidateData.name, '|', Math.round(data.audioBase64.length / 1024), 'KB');
                         }
                     });
                     
@@ -528,9 +886,13 @@
                     renderTable();
                 })
                 .catch(err => {
-                    console.error('❌ Firebase Error:', err);
-                    document.getElementById('tableContent').innerHTML = `<p style="text-align:center;padding:40px;color:#dc3545;"><strong>Error loading data:</strong> ${err.message}</p>`;
-                    alert('Error loading data: ' + err.message);
+                    console.error('❌ Error:', err);
+                    document.getElementById('tableContent').innerHTML = `
+                        <div class="empty-state">
+                            <h3>Error Loading Data</h3>
+                            <p>${err.message}</p>
+                        </div>
+                    `;
                 });
         }
 
@@ -549,92 +911,130 @@
         // RENDER TABLE
         function renderTable() {
             if (allSubs.length === 0) {
-                document.getElementById('tableContent').innerHTML = '<p style="text-align:center;padding:40px;color:#666;">No submissions yet</p>';
+                document.getElementById('tableContent').innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Submissions</h3>
+                        <p>No assessment submissions found.</p>
+                    </div>
+                `;
                 return;
             }
 
-            let html = '<table class="submissions-table"><thead><tr><th>Name</th><th>Email</th><th>Score</th><th>Status</th><th>Audio</th><th>Violations</th><th>Date</th><th>Action</th></tr></thead><tbody>';
+            let html = `
+                <table class="submissions-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Score</th>
+                            <th>Status</th>
+                            <th>Audio</th>
+                            <th>Violations</th>
+                            <th>Submitted</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
 
             allSubs.forEach((sub, idx) => {
                 const hasAudio = sub.audioBase64 && sub.audioBase64.length > 100;
                 const violations = sub.securityViolationCount || 0;
-                const violationColor = violations > 10 ? '#dc3545' : violations > 5 ? '#ffc107' : '#28a745';
+                const violationColor = violations > 10 ? 'var(--danger)' : violations > 5 ? 'var(--warning)' : 'var(--success)';
                 
-                html += `<tr>
-                    <td><strong>${sub.candidateData.name}</strong></td>
-                    <td>${sub.candidateData.email}</td>
-                    <td><strong>${sub.percentage}%</strong></td>
-                    <td><span class="badge ${sub.passed ? 'pass' : 'fail'}">${sub.passed ? 'PASSED' : 'FAILED'}</span></td>
-                    <td><span class="badge ${hasAudio ? 'audio-yes' : 'audio-no'}">${hasAudio ? '🎙️ Yes' : '❌ No'}</span></td>
-                    <td><span style="color:${violationColor};font-weight:bold;">${violations}</span></td>
-                    <td>${new Date(sub.submittedAt).toLocaleString()}</td>
-                    <td><button class="btn-view" onclick="viewSub(${idx})">👁️ View</button></td>
-                </tr>`;
+                html += `
+                    <tr>
+                        <td><strong>${sub.candidateData.name}</strong></td>
+                        <td>${sub.candidateData.email}</td>
+                        <td><strong style="font-size:16px;">${sub.percentage}%</strong></td>
+                        <td><span class="badge ${sub.passed ? 'pass' : 'fail'}">${sub.passed ? 'PASSED' : 'FAILED'}</span></td>
+                        <td><span class="badge ${hasAudio ? 'audio-yes' : 'audio-no'}">${hasAudio ? '🎙️ YES' : '❌ NO'}</span></td>
+                        <td><strong style="color:${violationColor};font-size:16px;">${violations}</strong></td>
+                        <td>${new Date(sub.submittedAt).toLocaleString()}</td>
+                        <td><button class="btn-view" onclick="viewSub(${idx})">👁️ View</button></td>
+                    </tr>
+                `;
             });
 
             html += '</tbody></table>';
             document.getElementById('tableContent').innerHTML = html;
         }
 
-        // GENERATE DETAILED SECURITY REPORT
-        function generateSecurityReport(sub) {
+        // GENERATE VIOLATION BREAKDOWN
+        function generateViolationBreakdown(sub) {
             const breakdown = sub.securityBreakdown || {};
             const total = sub.securityViolationCount || 0;
             
-            let html = `<p><strong>Total Violations:</strong> <span style="color:${total > 10 ? '#dc3545' : total > 5 ? '#ffc107' : '#28a745'};font-size:20px;font-weight:bold;">${total}</span></p>`;
-            
             if (total === 0) {
-                html += '<p style="color:#28a745;font-weight:600;margin-top:10px;">✅ No security violations detected - Clean submission</p>';
-                return html;
+                return `
+                    <div class="violation-alert low">
+                        ✅ No security violations detected - Clean submission
+                    </div>
+                `;
             }
 
-            html += '<div style="background:#f8f9fa;padding:20px;border-radius:10px;margin-top:15px;">';
-            html += '<h4 style="margin-bottom:15px;color:#1e3c72;">📊 Violation Breakdown:</h4>';
-            html += '<table class="violation-table">';
-            
             const violations = [
-                { label: '🔄 Tab Switches', count: breakdown.tabSwitches || 0, desc: 'Switched to another tab/window during test' },
-                { label: '📋 Copy/Paste Attempts', count: breakdown.pasteAttempts || 0, desc: 'Tried to paste content in answer fields' },
-                { label: '🖱️ Right-Click Attempts', count: breakdown.rightClicks || 0, desc: 'Right-clicked during test or on answers' },
-                { label: '🔧 DevTools Attempts', count: breakdown.devToolsAttempts || 0, desc: 'Opened browser developer tools' },
-                { label: '📸 Screenshot Attempts', count: breakdown.screenshotAttempts || 0, desc: 'Pressed Print Screen key' },
-                { label: '⌨️ Blocked Shortcuts', count: breakdown.keyboardShortcuts || 0, desc: 'Used blocked keyboard shortcuts (Ctrl+C/V/S, etc.)' }
+                { label: '🔄 Tab Switches', desc: 'Switched to another tab/window', count: breakdown.tabSwitches || 0 },
+                { label: '📋 Copy/Paste Attempts', desc: 'Tried to paste in answer fields', count: breakdown.pasteAttempts || 0 },
+                { label: '🖱️ Right-Click Attempts', desc: 'Right-clicked during test', count: breakdown.rightClicks || 0 },
+                { label: '🔧 DevTools Attempts', desc: 'Opened developer tools', count: breakdown.devToolsAttempts || 0 },
+                { label: '📸 Screenshot Attempts', desc: 'Pressed screenshot keys', count: breakdown.screenshotAttempts || 0 },
+                { label: '⌨️ Blocked Shortcuts', desc: 'Used blocked keyboard shortcuts', count: breakdown.keyboardShortcuts || 0 }
             ];
+
+            let html = `
+                <div class="violation-breakdown">
+                    <h4>📊 Violation Breakdown (Total: ${total})</h4>
+                    <div class="violation-grid">
+            `;
 
             violations.forEach(v => {
                 if (v.count > 0) {
+                    const itemClass = v.count > 5 ? 'high' : 'zero';
+                    const countClass = v.count > 5 ? 'high' : '';
                     html += `
-                        <tr>
-                            <td>
-                                <strong>${v.label}</strong><br>
-                                <small style="color:#666;">${v.desc}</small>
-                            </td>
-                            <td style="text-align:right;">
-                                <span class="violation-count ${v.count > 5 ? 'high' : ''}">${v.count}</span>
-                            </td>
-                        </tr>
+                        <div class="violation-item ${itemClass}">
+                            <div class="violation-label">
+                                ${v.label}
+                                <small>${v.desc}</small>
+                            </div>
+                            <div class="violation-count ${countClass}">${v.count}</div>
+                        </div>
                     `;
                 }
             });
 
-            html += '</table></div>';
+            html += '</div>';
 
+            // Alert based on severity
             if (total > 10) {
-                html += '<p style="background:#f8d7da;color:#721c24;padding:15px;border-radius:8px;margin-top:15px;font-weight:600;">⚠️ HIGH VIOLATION COUNT - Manual review strongly recommended</p>';
+                html += `
+                    <div class="violation-alert high">
+                        ⚠️ HIGH VIOLATION COUNT - Manual review strongly recommended
+                    </div>
+                `;
             } else if (total > 5) {
-                html += '<p style="background:#fff3cd;color:#856404;padding:15px;border-radius:8px;margin-top:15px;font-weight:600;">⚠️ Moderate violations detected - Review recommended</p>';
+                html += `
+                    <div class="violation-alert moderate">
+                        ⚠️ Moderate violations detected - Review recommended
+                    </div>
+                `;
             } else {
-                html += '<p style="background:#d4edda;color:#155724;padding:15px;border-radius:8px;margin-top:15px;font-weight:600;">✅ Low violation count - Acceptable range</p>';
+                html += `
+                    <div class="violation-alert low">
+                        ✅ Low violation count - Acceptable range
+                    </div>
+                `;
             }
 
+            html += '</div>';
             return html;
         }
 
-        // VIEW SUBMISSION DETAILS
+        // VIEW SUBMISSION
         function viewSub(idx) {
             currentSub = allSubs[idx];
-            console.log('📋 Opening submission:', currentSub.candidateData.name);
-            console.log('🎤 Audio Base64 length:', currentSub.audioBase64 ? currentSub.audioBase64.length : 0);
+            console.log('📋 Opening:', currentSub.candidateData.name);
 
             let html = `
                 <div class="info-section">
@@ -646,85 +1046,89 @@
                 </div>
             `;
 
-            // AUDIO SECTION
+            // AUDIO
             if (currentSub.audioBase64 && currentSub.audioBase64.length > 100) {
                 html += `
                     <div class="audio-section">
-                        <h3 style="color:#0d47a1;margin-bottom:15px;">🎤 Audio Introduction</h3>
+                        <h3>🎤 Audio Introduction</h3>
                         <div class="audio-player">
-                            <audio id="modalAudio" controls controlsList="nodownload" style="width:100%;margin-bottom:15px;">
+                            <audio id="modalAudio" controls style="width:100%;">
                                 <source src="${currentSub.audioBase64}" type="audio/webm">
                                 <source src="${currentSub.audioBase64}" type="audio/mp4">
-                                <source src="${currentSub.audioBase64}" type="audio/mpeg">
-                                Your browser does not support the audio element.
+                                Your browser does not support audio playback.
                             </audio>
-                            <p style="font-size:13px;color:#666;margin-bottom:15px;">
-                                📦 Audio size: ${Math.round(currentSub.audioBase64.length / 1024)} KB
-                            </p>
-                            <button class="btn btn-success" onclick="downloadAudio()" style="margin-right:10px;">📥 Download Audio</button>
-                            <button class="btn btn-primary" onclick="testAudioPlayback()">▶️ Test Playback</button>
+                            <div class="audio-info">
+                                📦 Size: ${Math.round(currentSub.audioBase64.length / 1024)} KB
+                            </div>
+                            <button class="btn btn-success" onclick="downloadAudio()">📥 Download Audio</button>
+                            <button class="btn btn-primary" onclick="testAudio()" style="margin-left:10px;">▶️ Test Playback</button>
                         </div>
                     </div>
                 `;
             } else {
                 html += `
-                    <div style="background:#fff3cd;padding:20px;border-radius:10px;margin:20px 0;border-left:4px solid #ffc107;">
-                        <strong>⚠️ No Audio Recording Available</strong>
+                    <div style="background:#fff3cd;padding:20px;border-radius:12px;margin:20px 0;border-left:4px solid var(--warning);">
+                        <strong>⚠️ No Audio Recording</strong>
                         <p style="margin-top:10px;color:#856404;">This candidate did not record an audio introduction.</p>
                     </div>
                 `;
             }
 
+            // TEST RESULTS
             html += `
                 <div class="info-section">
                     <h3>📊 Test Results</h3>
                     <p><strong>Score:</strong> ${currentSub.percentage}% (${currentSub.correctCount}/${currentSub.totalMCQ} correct)</p>
                     <p><strong>Status:</strong> <span class="badge ${currentSub.passed ? 'pass' : 'fail'}">${currentSub.passed ? 'PASSED ✓' : 'FAILED ✗'}</span></p>
                     <p><strong>Time Taken:</strong> ${currentSub.timeTaken} minutes</p>
-                    <p><strong>Submitted At:</strong> ${new Date(currentSub.submittedAt).toLocaleString()}</p>
-                </div>
-
-                <div class="info-section">
-                    <h3>🔒 Security & Integrity Report</h3>
-                    ${generateSecurityReport(currentSub)}
+                    <p><strong>Submitted:</strong> ${new Date(currentSub.submittedAt).toLocaleString()}</p>
                 </div>
             `;
 
+            // SECURITY
+            html += `
+                <div class="info-section">
+                    <h3>🔒 Security & Integrity Report</h3>
+                    ${generateViolationBreakdown(currentSub)}
+                </div>
+            `;
+
+            // DEVICE INFO
             if (currentSub.deviceInfo) {
                 html += `
                     <div class="info-section">
                         <h3>💻 Device Information</h3>
                         <p><strong>Platform:</strong> ${currentSub.deviceInfo.platform || 'Unknown'}</p>
-                        <p><strong>Browser:</strong> ${currentSub.deviceInfo.userAgent || 'Unknown'}</p>
+                        <p><strong>Screen:</strong> ${currentSub.deviceInfo.screenResolution || 'Unknown'}</p>
+                        <p><strong>Timezone:</strong> ${currentSub.deviceInfo.timezone || 'Unknown'}</p>
                         <p><strong>Language:</strong> ${currentSub.deviceInfo.language || 'Unknown'}</p>
                     </div>
                 `;
             }
 
+            // ACTIONS
             html += `
-                <div style="text-align:center;margin-top:30px;padding-top:30px;border-top:2px solid #f0f0f0;">
-                    <button class="btn btn-success" onclick="downloadReport()" style="margin-right:10px;">📥 Download Full Report</button>
-                    <button class="btn btn-primary" onclick="viewSecurityLog()">🔍 View Security Log</button>
+                <div style="text-align:center;margin-top:30px;padding-top:30px;border-top:2px solid var(--light);">
+                    <button class="btn btn-success" onclick="downloadReport()" style="margin:5px;">📥 Download Report</button>
+                    <button class="btn btn-primary" onclick="viewSecurityLog()" style="margin:5px;">🔍 Security Log</button>
                 </div>
             `;
 
             document.getElementById('modalBody').innerHTML = html;
             document.getElementById('detailModal').classList.add('show');
 
+            // Load audio
             setTimeout(() => {
-                const audioEl = document.getElementById('modalAudio');
-                if (audioEl) {
-                    audioEl.load();
-                    console.log('✅ Audio element loaded');
-                }
+                const audio = document.getElementById('modalAudio');
+                if (audio) audio.load();
             }, 100);
         }
 
         function closeModal() {
-            const audioEl = document.getElementById('modalAudio');
-            if (audioEl) {
-                audioEl.pause();
-                audioEl.currentTime = 0;
+            const audio = document.getElementById('modalAudio');
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
             }
             document.getElementById('detailModal').classList.remove('show');
         }
@@ -733,49 +1137,96 @@
             if (e.target === this) closeModal();
         });
 
-        // TEST AUDIO PLAYBACK
-        function testAudioPlayback() {
-            const audioEl = document.getElementById('modalAudio');
-            if (!audioEl) {
-                alert('Audio element not found');
-                return;
-            }
-
-            console.log('🎵 Testing audio playback...');
+        // TEST AUDIO
+        function testAudio() {
+            const audio = document.getElementById('modalAudio');
+            if (!audio) return;
             
-            audioEl.play()
-                .then(() => {
-                    console.log('✅ Audio playing successfully');
-                })
+            audio.play()
+                .then(() => console.log('✅ Playing'))
                 .catch(err => {
-                    console.error('❌ Playback error:', err);
-                    alert('Audio playback error: ' + err.message + '\n\nTry downloading the audio instead.');
+                    console.error('❌ Error:', err);
+                    alert('Playback error. Try downloading instead.');
                 });
         }
 
         // DOWNLOAD AUDIO
         function downloadAudio() {
             if (!currentSub || !currentSub.audioBase64) {
-                alert('No audio available to download');
+                alert('No audio available');
                 return;
             }
 
             try {
-                console.log('📥 Downloading audio...');
-                
                 const link = document.createElement('a');
                 link.href = currentSub.audioBase64;
-                link.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Audio_' + Date.now() + '.webm';
+                link.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Audio.webm';
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                
-                console.log('✅ Audio download initiated');
-                
+                console.log('✅ Downloaded');
             } catch (err) {
-                console.error('❌ Download error:', err);
-                alert('Error downloading audio: ' + err.message);
+                alert('Download error: ' + err.message);
             }
+        }
+
+        // DOWNLOAD REPORT
+        function downloadReport() {
+            if (!currentSub) return;
+            
+            let report = '═══════════════════════════════════════\n';
+            report += '   ASSESSMENT REPORT\n';
+            report += '═══════════════════════════════════════\n\n';
+            
+            report += '📋 CANDIDATE\n';
+            report += '─────────────────────────────────────\n';
+            report += 'Name: ' + currentSub.candidateData.name + '\n';
+            report += 'Email: ' + currentSub.candidateData.email + '\n';
+            report += 'Phone: ' + currentSub.candidateData.phone + '\n';
+            report += 'ID: ' + currentSub.submissionId + '\n\n';
+            
+            report += '📊 RESULTS\n';
+            report += '─────────────────────────────────────\n';
+            report += 'Score: ' + currentSub.percentage + '%\n';
+            report += 'Correct: ' + currentSub.correctCount + '/' + currentSub.totalMCQ + '\n';
+            report += 'Status: ' + (currentSub.passed ? 'PASSED ✓' : 'FAILED ✗') + '\n';
+            report += 'Time: ' + currentSub.timeTaken + '\n';
+            report += 'Date: ' + new Date(currentSub.submittedAt).toLocaleString() + '\n\n';
+            
+            report += '🎤 AUDIO\n';
+            report += '─────────────────────────────────────\n';
+            report += 'Recorded: ' + (currentSub.audioBase64 ? 'Yes ✓' : 'No ✗') + '\n';
+            if (currentSub.audioBase64) {
+                report += 'Size: ' + Math.round(currentSub.audioBase64.length / 1024) + ' KB\n';
+            }
+            report += '\n';
+            
+            report += '🔒 SECURITY\n';
+            report += '─────────────────────────────────────\n';
+            report += 'Total Violations: ' + (currentSub.securityViolationCount || 0) + '\n\n';
+            
+            if (currentSub.securityBreakdown) {
+                const b = currentSub.securityBreakdown;
+                if (b.tabSwitches) report += '  Tab Switches: ' + b.tabSwitches + '\n';
+                if (b.pasteAttempts) report += '  Paste Attempts: ' + b.pasteAttempts + '\n';
+                if (b.rightClicks) report += '  Right Clicks: ' + b.rightClicks + '\n';
+                if (b.devToolsAttempts) report += '  DevTools: ' + b.devToolsAttempts + '\n';
+                if (b.screenshotAttempts) report += '  Screenshots: ' + b.screenshotAttempts + '\n';
+                if (b.keyboardShortcuts) report += '  Shortcuts: ' + b.keyboardShortcuts + '\n';
+            }
+            
+            report += '\n═══════════════════════════════════════\n';
+            report += 'Generated: ' + new Date().toLocaleString() + '\n';
+            
+            const blob = new Blob([report], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Report.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         // VIEW SECURITY LOG
@@ -785,9 +1236,9 @@
                 return;
             }
 
-            let log = '═══════════════════════════════\n';
+            let log = '═══════════════════════════════════════\n';
             log += '   SECURITY EVENT LOG\n';
-            log += '═══════════════════════════════\n\n';
+            log += '═══════════════════════════════════════\n\n';
             log += 'Candidate: ' + currentSub.candidateData.name + '\n';
             log += 'Total Events: ' + currentSub.securityLog.length + '\n\n';
 
@@ -797,7 +1248,7 @@
                 log += `    Details: ${event.details}\n\n`;
             });
 
-            const blob = new Blob([log], {type: 'text/plain;charset=utf-8'});
+            const blob = new Blob([log], {type: 'text/plain'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -808,79 +1259,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // DOWNLOAD REPORT
-        function downloadReport() {
-            if (!currentSub) return;
-            
-            let report = '═══════════════════════════════════════\n';
-            report += '   CUSTOMER SERVICE ASSESSMENT REPORT\n';
-            report += '═══════════════════════════════════════\n\n';
-            
-            report += '📋 CANDIDATE INFORMATION\n';
-            report += '─────────────────────────────────────\n';
-            report += 'Name: ' + currentSub.candidateData.name + '\n';
-            report += 'Email: ' + currentSub.candidateData.email + '\n';
-            report += 'Phone: ' + currentSub.candidateData.phone + '\n';
-            report += 'Submission ID: ' + currentSub.submissionId + '\n\n';
-            
-            report += '📊 TEST RESULTS\n';
-            report += '─────────────────────────────────────\n';
-            report += 'Score: ' + currentSub.percentage + '%\n';
-            report += 'Correct Answers: ' + currentSub.correctCount + '/' + currentSub.totalMCQ + '\n';
-            report += 'Status: ' + (currentSub.passed ? 'PASSED ✓' : 'FAILED ✗') + '\n';
-            report += 'Time Taken: ' + currentSub.timeTaken + '\n';
-            report += 'Submitted: ' + new Date(currentSub.submittedAt).toLocaleString() + '\n\n';
-            
-            report += '🎤 AUDIO INTRODUCTION\n';
-            report += '─────────────────────────────────────\n';
-            report += 'Audio Recorded: ' + (currentSub.audioBase64 ? 'Yes ✓' : 'No ✗') + '\n';
-            if (currentSub.audioBase64) {
-                report += 'Audio Size: ' + Math.round(currentSub.audioBase64.length / 1024) + ' KB\n';
-            }
-            report += '\n';
-            
-            report += '🔒 SECURITY & INTEGRITY\n';
-            report += '─────────────────────────────────────\n';
-            report += 'Total Violations: ' + (currentSub.securityViolationCount || 0) + '\n\n';
-            
-            if (currentSub.securityBreakdown) {
-                const b = currentSub.securityBreakdown;
-                report += 'BREAKDOWN:\n';
-                if (b.tabSwitches) report += '  • Tab Switches: ' + b.tabSwitches + '\n';
-                if (b.pasteAttempts) report += '  • Copy/Paste Attempts: ' + b.pasteAttempts + '\n';
-                if (b.rightClicks) report += '  • Right-Click Attempts: ' + b.rightClicks + '\n';
-                if (b.devToolsAttempts) report += '  • DevTools Attempts: ' + b.devToolsAttempts + '\n';
-                if (b.screenshotAttempts) report += '  • Screenshot Attempts: ' + b.screenshotAttempts + '\n';
-                if (b.keyboardShortcuts) report += '  • Keyboard Shortcut Blocks: ' + b.keyboardShortcuts + '\n';
-                report += '\n';
-            }
-            
-            if (currentSub.deviceInfo) {
-                report += '💻 DEVICE INFORMATION\n';
-                report += '─────────────────────────────────────\n';
-                report += 'Platform: ' + (currentSub.deviceInfo.platform || 'Unknown') + '\n';
-                report += 'Browser: ' + (currentSub.deviceInfo.userAgent || 'Unknown') + '\n';
-                report += 'Language: ' + (currentSub.deviceInfo.language || 'Unknown') + '\n\n';
-            }
-            
-            report += '─────────────────────────────────────\n';
-            report += 'Report Generated: ' + new Date().toLocaleString() + '\n';
-            report += '═══════════════════════════════════════\n';
-            
-            const blob = new Blob([report], {type: 'text/plain;charset=utf-8'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = currentSub.candidateData.name.replace(/\s+/g, '_') + '_Report_' + Date.now() + '.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            console.log('✅ Report downloaded');
-        }
-
-        // DOWNLOAD ALL SUBMISSIONS
+        // DOWNLOAD ALL
         function downloadAll() {
             if (allSubs.length === 0) {
                 alert('No submissions to download');
@@ -891,7 +1270,7 @@
             report += '   ALL SUBMISSIONS SUMMARY\n';
             report += '═══════════════════════════════════════\n\n';
             report += 'Generated: ' + new Date().toLocaleString() + '\n';
-            report += 'Total Submissions: ' + allSubs.length + '\n';
+            report += 'Total: ' + allSubs.length + '\n';
             report += 'Passed: ' + allSubs.filter(s => s.passed).length + '\n';
             report += 'Failed: ' + allSubs.filter(s => !s.passed).length + '\n\n';
 
@@ -908,7 +1287,7 @@
 
             report += '═══════════════════════════════════════\n';
 
-            const blob = new Blob([report], {type: 'text/plain;charset=utf-8'});
+            const blob = new Blob([report], {type: 'text/plain'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -917,11 +1296,9 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
-            console.log('✅ All submissions downloaded');
         }
 
-        console.log('✅ Admin panel initialized');
+        console.log('✅ Admin panel ready');
     </script>
 </body>
 </html>
